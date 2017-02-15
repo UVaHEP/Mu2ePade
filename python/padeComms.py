@@ -4,9 +4,6 @@ import xml
 import xml.etree.ElementTree as etree
 import struct
 
-
-
-
 class reg:
     def __init__(self, Comment, PrefHex, FPGAOffsetMultiplier, BitComments,
                  Name, UpperAddress, LowerAddress, Width, Address):
@@ -45,6 +42,21 @@ def readVoltage(fpga = 0):
 def parseVoltage(v):
     return (int(v, 16)*5.38)/256
 
+def parseA0(a):
+
+    try:
+        adc = float(a)
+        if (adc > 4.096):
+            adc = 8.192 - adc
+
+        return (adc/8)*250
+
+    except Exception as e:
+        print e
+        
+        
+    
+
 def writeVoltage(v, fpga=0):
     cmds = []
     if (fpga > 3):
@@ -81,6 +93,19 @@ def readRegisterCmd(r, fpga=0):
     cmds.append(cmd.format(hexFormatter(int(r.LowerAddress)+fpgaOffset)))
     return cmds
 
+
+def readOutRegisters(connection, Registers):
+    for name, register in Registers.items():
+        cmds = readRegisterCmd(register)
+        resp = []
+        for c in cmds:
+            connection.write(c)
+            resp.append(connection.read_until('\r\n').strip())
+        print resp
+
+
+
+
 tree = etree.parse('superpaderegs.xml')
 root = tree.getroot()
 
@@ -105,75 +130,20 @@ Registers = dict(map(lambda r: (r.Name, r), regs))
 hexFormatter = lambda x: format(int(x), '2x').strip()
 
 
-reg16bit = []
-reg32bit = []
-print 'Register List\n-----------------'
-for r in regs:
-    if int(r.Width) == 16:
-        reg16bit.append(r)
-    elif int(r.Width) == 32:
-        reg32bit.append(r)
-
-
-
-            
-        
-    
-for r in reg16bit:
-    print r.Name
-
-
-print '\n\nRegister List 32-bit \n-----------------'
-for r in reg32bit:
-    print r.Name
-    
 connection = telnetlib.Telnet('', 5001)
 
 
-for key in Registers.keys():
-    r = Registers[key]
-    cmds = readRegisterCmd(r)
-    resp = []
-    for c in cmds:
-        connection.write(c)
-        resp.append(connection.read_until('\r\n').strip())
-    print resp
 
+readOutRegisters(connection, Registers)
 
-# s = 'rd {0} {1}\r\n'
-# for r in reg16bit:
-#     connection.write(s.format(hexFormatter(r.Address), 0))
-#     print 'Reading: {0}'.format(hexFormatter(r.Address))
-#     msg = connection.read_until('\r\n')
-#     print 'For Register {0}, Value: {1}'.format(r.Name, msg)
-
-resp = []
-cmds = readRegisterCmd(Registers['SPILL_TRIG_COUNT'])
-for c in cmds:
-    connection.write(c)
-    resp.append(connection.read_until('\r\n').strip())
-
-print 'Trigger: {0}'.format(resp)
-
-# trigHigh = 0
-# trigLow = 0
-# for r in reg32bit:
-
-#     sHigh = 'rd {0} 0\r\n'
-#     sLow = 'rd {0} 0\r\n'
-#     connection.write(sHigh.format(hexFormatter(r.UpperAddress)))
-#     print 'Reading High: {0}'.format(hexFormatter(r.UpperAddress))
-#     msgHigh = connection.read_until('\r\n').strip()
-#     print 'Reading Low: {0}'.format(hexFormatter(r.LowerAddress))
-#     connection.write(sLow.format(hexFormatter(r.LowerAddress)))
-#     msgLow = connection.read_until('\r\n').strip()
-#     print 'Reading {0}, High: {1}, Low: {2}'.format(r.Name, msgHigh, msgLow)
-#     if r.Name.find('SPILL_TRIG_COUNT') != -1:
-#         trigHigh = int(msgHigh, 16)
-#         trigLow = int(msgLow, 16)
-
-# print 'We have {0} triggers available, trying to get them'.format(trigLow)
-exit()
+A0Cmds = readA0(0)
+connection.write(A0Cmds[0])
+connection.write(A0Cmds[1])
+connection.write(A0Cmds[2])
+adc = connection.read_until('avg').split('\n\r')[-1].split('avg')[0]
+connection.write(A0Cmds[3])
+print parseA0(adc)
+    
 s = connection.get_socket()
 s.sendall('rdb \r\n')
 

@@ -116,7 +116,6 @@ for i in range(0, sH.triggerCount):
             break
 
         end += samples*2
-#        print '{0}:{1}'.format(end, end+samples*2)
 
         
     evt = event(timestamp, triggerCount, triggerType, status, chs)
@@ -132,5 +131,8 @@ for i in range(0, sH.triggerCount):
 
 for e in events: 
     print e.chs.keys()
+    for key in e.chs.keys():
+        print e.chs[key]
+    
 
 
