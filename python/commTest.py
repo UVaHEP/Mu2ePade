@@ -97,10 +97,6 @@ class padeClient(LineReceiver):
 
     def connectionMade(self):
         print('Connected to server!')
-#        print('Registers that I know about\n-----------')
-#        for reg in self.getRegisterNames():
-#            print reg
-#        print 'Factory name....{0}'.format(self.factory.name)
         self.factory.handle_verification(self)
 
 
@@ -109,6 +105,9 @@ class padeClient(LineReceiver):
 
     def lineReceived(self, line):
         self.handle_msg(line)
+
+    def rawDataReceived(self, packet):
+        self.handle_raw(packet)
 
     def connectionLost(self, reason):
         pass
@@ -184,15 +183,18 @@ class padeFactory(protocol.ClientFactory):
             reactor.callLater(0.1, self.printRegisterStatus)
             self.client.handle_msg = self.client.generic_receive
         
-
+    def parseVoltage(self, v):
+        return (v*5.38)/256
 
     def printRegisterStatus(self):
         print 'Registers\n---------'
         for name in self.registers:
-            print '{0}:{1}'.format(name, self.registers[name].Status)
+            if name.find( 'BIAS_BUS_DAC0') != -1:
+                print '{0}, Voltage: {1}'.format(name, self.parseVoltage(self.registers[name].Status))
+            else:
+                print '{0}:{1}'.format(name, self.registers[name].Status)
         
     def readRegisterBase(self, name, upper, line ):
-#        print 'Name: {0}, Value: {1}'.format(name, line)
         if upper:
             self.registers[name].Status += (int(line, 16)<<16)
         else:
@@ -223,8 +225,39 @@ class padeFactory(protocol.ClientFactory):
 
             for cmd in cmds:
                 self.client.sendLine(cmd)
-        
+        reactor.callLater(2, self.readData)
         reactor.callLater(3, self.client.transport.loseConnection)
+
+
+    def processData(self, packet):
+        self.lastData.append(packet)
+
+        if (self.firstPacket):
+            self.firstPacket = False
+            #First 4 bytes should be the spillWordCount
+            print len(packet)
+            scHeader = packet[0:4]
+            spillWordCount = int(scHeader.encode('hex'), 16)*2
+            print 'spill word count: {0}'.format(spillWordCount)
+            #+2 restores header to count
+            self.remaining = (spillWordCount+2)-len(packet)
+        else:
+            self.remaining -= len(packet)
+
+        print 'Remaining: {0}'.format(self.remaining)
+
+
+        
+
+        
+    def readData(self):
+        self.client.setRawMode()
+        self.firstPacket = True
+        self.client.handle_raw = self.processData
+        self.lastData = []
+        self.client.sendLine('rdb \r\n')
+        
+    
 
 def connected(connectedProto):
     print 'Protocol has successfully connected'
