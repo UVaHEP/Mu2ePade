@@ -56,9 +56,6 @@ fpgaOffsetMultiplier = 0x400
 def regCmd(reg, value = None, fpga = 0):
     #As of now Lower Address is the same as Address
     #so I'm using that for everything 
-
-
-
     
     fpgaOffset = fpga*fpgaOffsetMultiplier
     cmds = []
@@ -141,5 +138,66 @@ class event:
         self.chs = chs
         
 
-                                    
+
+
+
+def buildDataEvents(data):
+    print 'Length Received: {0}'.format(len(data))
+    sH = spillHeader(data[0:16])
+    print sH
+    eventData = data[16:]
+    events = []
+    trigCount = 0
+    start = 16
+
+
+    for i in range(0, sH.triggerCount):
+        #Parse Events
+        #We start by parsing the event header
+        print 'Processing Trigger Count: {0} of {1}'.format(i+1, sH.triggerCount)
+        wordCount = encode(eventData[0:2])
+        timestamp = encode(eventData[2:6])
+        triggerCount = encode(eventData[6:10])/2
+        samples = encode(eventData[10:12])
+        triggerType = encode(eventData[12:14])
+        status = encode(eventData[14:16])
+        print 'Samples: {0}'.format(samples)
+        start = 16
+        end = start+samples*2
+        chData = eventData[start:(start+samples*2)]
+
+        chNum = 0
+        chs = {}
+        while True:
+            chStart = encode(chData[0:2])
+            sampleLst = []
+            if (chStart &0x8000) == 0x8000 :
+                print 'Found Channel {0}'.format(chStart&0xfff)
+            else:
+                break
+            for j in range(0, len(chData)/2):
+                e = encode(chData[j*2:j*2+2])
+                if (e & 0x8000) == 0x8000:
+                    # Channel Number
+                    chNum = e&0xfff;
+                if e > 0x7ff:
+                    e -= 0xfff
+                sampleLst.append(e)
+            chs[chNum] = sampleLst
+            chData = eventData[end:end+samples*2]
+            if len(chData) < samples*2:
+                #Missing channels?
+                break
+            end += samples*2
+        
+        evt = event(timestamp, triggerCount, triggerType, status, chs)
+        start = end-samples*2
+        eventData = eventData[start:]
+        events.append(evt)
+        if len(chData) < samples*2:
+            #Missing channels?
+            print 'We may be missing some channels'
+            break
+        return events
+
         
