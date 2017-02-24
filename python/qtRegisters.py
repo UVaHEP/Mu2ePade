@@ -15,19 +15,19 @@ from commTest import padeClient, padeFactory
 
 class regWindow(QMainWindow):
     def __init__(self, parent=None):
-        self.registers = padeCommon.readRegisters('superpaderegs.xml')
+        self.f = padeFactory('superpaderegs.xml')
+        self.registers = self.f.registers
         QMainWindow.__init__(self, parent)
         self.create_main_frame()
-        self.f = None
+
 
 
     def padeConnect(self):
         self.button.setText("Connecting")
         self.disconnect(self.button, QtCore.SIGNAL('clicked()'), self.padeConnect)
         
-        self.f = padeFactory('superpaderegs.xml')
         self.f.verifyCb = self.connected
-        c = reactor.connectTCP('128.143.196.217', 5001, self.f)
+        c = reactor.connectTCP('', 5001, self.f)
 
     def padeDisconnect(self):
         self.f.client.transport.loseConnection()

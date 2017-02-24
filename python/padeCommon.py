@@ -71,7 +71,7 @@ def regCmd(reg, value = None, fpga = 0):
                 upperRead = readBase.format(hexFormatter(int(reg.UpperAddress)+fpgaOffset))
             lowerRead = readBase.format(hexFormatter(int(reg.Address)+fpgaOffset))
             if upperRead:
-                return [upperRead, lowerRead]
+                return [lowerRead, upperRead]
             else:
                 return [lowerRead]
         else:
@@ -87,7 +87,7 @@ def regCmd(reg, value = None, fpga = 0):
                 # 0xFFFF, but wanted it be clear 
             lowerWrite = writeBase.format(hexFormatter(reg.Address+fpgaOffset), hexFormatter(value & 0x0000FFFF))
             if upperWrite:
-                return [upperWrite, lowerWrite]
+                return [lowerWrite, upperWrite]
             else:
                 return [lowerWrite]
 

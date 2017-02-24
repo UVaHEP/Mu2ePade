@@ -67,6 +67,7 @@ class padeFactory(protocol.ClientFactory):
         self.verified = False 
         self.registers = padeCommon.readRegisters(registerFile)
         self.verifyCb = None
+        self.client = None
     
     def buildProtocol(self, addr):
         p = padeClient()
@@ -110,17 +111,6 @@ class padeFactory(protocol.ClientFactory):
             self.client.handle_msg = self.client.generic_receive
             self.readcb()
         
-        
-        
-    def handle_registers(self, line):
-        self.fns[self.i].callback(line)
-        self.i += 1
-        if (self.i >= len(self.fns)):
-            #We're done
-            print 'Finished Reading Registers'
-            reactor.callLater(0.1, self.printRegisterStatus)
-            self.client.handle_msg = self.client.generic_receive
-        
     def parseVoltage(self, v):
         return (v*5.38)/256
 
@@ -140,62 +130,33 @@ class padeFactory(protocol.ClientFactory):
         cmds = padeCommon.regCmd(self.registers[str(name)], None, fpga)
         self.readcb = cb
         self.cbs = deque()
-        if len(cmds) > 1:
-            # Upper
+        
+        upper = False
+        for cmd in cmds:
+            # We'll only have two cmds, in an n>2 case this won't work correctly
             d = defer.Deferred()
-            d.addCallback(functools.partial(self.readRegisterBase, str(name), True))
+            d.addCallback(functools.partial(self.readRegisterBase, str(name), upper))
             self.cbs.append(d)
-        d = defer.Deferred()
-        d.addCallback(functools.partial(self.readRegisterBase, str(name), False))
-        self.cbs.append(d)
+            upper = True 
         
         for cmd in cmds:
             self.client.sendLine(cmd)
             
-            
-
-            
-                
     def readRegisterBase(self, name, upper, line ):
         if upper:
             self.registers[name].Status += (int(line, 16)<<16)
         else:
             self.registers[name].Status += int(line, 16)
 
-        
-    def readRegisters(self):
-        print 'Now I will read registers from the superPade'
-        self.cmdsum = 0
-        self.fns = []
-        self.i = 0        
-        self.dlst = defer.DeferredList(self.fns)
-        for regName in self.registers.keys():
-            cmds = padeCommon.regCmd(self.registers[regName])
-            self.cmdsum += len(cmds)
-            if len(cmds)>1:
-                #Upper and lower messages, should rethink this approach
-                #For now add an extra callback
-                d = defer.Deferred()
-                d.addCallback(functools.partial(self.readRegisterBase, regName, True))
-                self.fns.append(d)
-
-            d = defer.Deferred()
-            d.addCallback(functools.partial(self.readRegisterBase, regName, False))
-            self.fns.append(d)
-
-            self.client.handle_msg = self.handle_registers
-
-            for cmd in cmds:
-                self.client.sendLine(cmd)
-
 
     def processData(self, packet):
+        ### Note add a time out for this
+        
         self.lastData += packet
         
         if (self.firstPacket):
             self.firstPacket = False
             #First 4 bytes should be the spillWordCount
-            print len(packet)
             scHeader = packet[0:4]
             spillWordCount = int(scHeader.encode('hex'), 16)*2
             print 'spill word count: {0}'.format(spillWordCount)
