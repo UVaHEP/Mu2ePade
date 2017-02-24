@@ -9,6 +9,7 @@ import xml.etree.ElementTree as etree
 
 import padeCommon 
 from padeCommon import register
+from collections import deque
 
 import argparse 
 from twisted.internet import reactor, protocol, defer
@@ -75,11 +76,11 @@ class padeFactory(protocol.ClientFactory):
 
     def clientConnectionFailed(self, connector, reason):
         print('Connection failed ....')
-        reactor.stop()
+
 
     def clientConnectionLost(self, connector, reason):
         print ('Connection Lost ....')
-        reactor.stop()
+
 
     def verification_cb(self, line):
         try:
@@ -99,6 +100,18 @@ class padeFactory(protocol.ClientFactory):
         self.client.handle_msg = self.verification_cb
         client.sendLine("rd 0")
 
+
+    def handle_register(self, line):
+        cb = self.cbs.popleft()
+        cb.callback(line)
+        if len (self.cbs) == 0:
+            #Done
+            print 'Finished Reading Register'
+            self.client.handle_msg = self.client.generic_receive
+            self.readcb()
+        
+        
+        
     def handle_registers(self, line):
         self.fns[self.i].callback(line)
         self.i += 1
@@ -118,7 +131,31 @@ class padeFactory(protocol.ClientFactory):
                 print '{0}, Voltage: {1}'.format(name, self.parseVoltage(self.registers[name].Status))
             else:
                 print '{0}:{1}'.format(name, self.registers[name].Status)
+
+
+    def readRegister(self, name, cb, fpga=0):
+        # I don't like this idiom, I'll have to see if I can come up with
+        # a clearer way of expressing it
+        self.client.handle_msg = self.handle_register
+        cmds = padeCommon.regCmd(self.registers[str(name)], None, fpga)
+        self.readcb = cb
+        self.cbs = deque()
+        if len(cmds) > 1:
+            # Upper
+            d = defer.Deferred()
+            d.addCallback(functools.partial(self.readRegisterBase, str(name), True))
+            self.cbs.append(d)
+        d = defer.Deferred()
+        d.addCallback(functools.partial(self.readRegisterBase, str(name), False))
+        self.cbs.append(d)
         
+        for cmd in cmds:
+            self.client.sendLine(cmd)
+            
+            
+
+            
+                
     def readRegisterBase(self, name, upper, line ):
         if upper:
             self.registers[name].Status += (int(line, 16)<<16)
@@ -153,8 +190,8 @@ class padeFactory(protocol.ClientFactory):
 
 
     def processData(self, packet):
-        self.lastData.append(packet)
-
+        self.lastData += packet
+        
         if (self.firstPacket):
             self.firstPacket = False
             #First 4 bytes should be the spillWordCount
@@ -170,17 +207,21 @@ class padeFactory(protocol.ClientFactory):
         print 'Remaining: {0}'.format(self.remaining)
 
         if (self.remaining == 0):
-            reactor.callLater(1, self.outputData)
+            self.client.setLineMode()
+            self.client.handle_msg = self.client.generic_receive
+            if self.readcb:
+                self.readcb(self.lastData)
         
     def outputData(self):
         for packet in self.lastData:
             print packet
         
-    def readData(self):
+    def readData(self, cb=None):
+        self.readcb = cb
         self.client.setRawMode()
         self.firstPacket = True
         self.client.handle_raw = self.processData
-        self.lastData = []
+        self.lastData = ''
         self.client.sendLine('rdb \r\n')
         
     

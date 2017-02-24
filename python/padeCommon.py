@@ -101,3 +101,45 @@ def regCmd(reg, value = None, fpga = 0):
 
 
 
+### Parser will get rearranged
+
+class spillHeader:
+    def __init__(self, data):
+        if len(data) != 16:
+            print 'Error, bad spill header passed'
+
+        self.spillWordCount = int(data[0:4].encode('hex'), 16)
+        self.triggerCount = int(data[4:8].encode('hex'), 16)
+        self.spillCounter = int(data[8:10].encode('hex'), 16)
+        self.mask = int(data[10:12].encode('hex'), 16)
+        self.boardID = int(data[12:14].encode('hex'), 16)
+        self.spillStatus = int(data[14:16].encode('hex'), 16)
+
+
+    def __str__(self):
+        return 'spill word count: {0}, trigger count: {1}, spill counter: {2}, mask: {3}, board id: {4}, spill status: {5}'.format(self.spillWordCount,
+                                                                                                                                  self.triggerCount,
+                                                                                                                                  self.spillCounter,
+                                                                                                                                  self.mask,
+                                                                                                                                  self.boardID,
+                                                                                                                                  self.spillStatus)
+    
+
+
+def encode(l):
+    return int(l.encode('hex'), 16)
+
+
+
+
+class event:
+    def __init__(self, tS, trigCount, trigType, status, chs):
+        self.tS = tS
+        self.trigCount = trigCount
+        self.trigType = trigType
+        self.status = status
+        self.chs = chs
+        
+
+                                    
+        
