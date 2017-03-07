@@ -11,7 +11,7 @@ import qtreactor.pyqt4reactor
 qtreactor.pyqt4reactor.install()
 
 from twisted.internet import reactor, task
-from commTest import padeClient, padeFactory
+from commLayer import padeClient, padeFactory
 
 class regWindow(QMainWindow):
     def __init__(self, parent=None):
@@ -74,7 +74,8 @@ class regWindow(QMainWindow):
         self.pullDown = QComboBox()
         self.rLabel = QLabel()
         self.pg = pyqtgraph.PlotWidget()        
-
+        self.vbutton = QPushButton('Read Voltage', page)
+        self.wbutton = QPushButton('Write Voltage',page)
         
         vbox1 = QVBoxLayout()
         vbox1.addWidget(self.button)
@@ -82,6 +83,8 @@ class regWindow(QMainWindow):
         vbox1.addWidget(self.pullDown)
         vbox1.addWidget(self.rLabel)
         vbox1.addWidget(self.registersBtn)
+        vbox1.addWidget(self.vbutton)
+        vbox1.addWidget(self.wbutton)
         vbox1.addWidget(self.pg)
         self.pullDown.addItems(self.registers.keys())
         self.pullDown.currentIndexChanged.connect(self.selectionchange)
@@ -94,6 +97,14 @@ class regWindow(QMainWindow):
                      QtCore.SIGNAL('clicked()'),
                      self.padeReadData)
 
+        self.connect(self.vbutton,
+                     QtCore.SIGNAL('clicked()'),
+                     self.padeReadVoltage)
+
+        self.connect(self.wbutton,
+                     QtCore.SIGNAL('clicked()'),
+                     self.padeWriteVoltage)
+        
         page.setLayout(vbox1)
         self.setCentralWidget(page)
 
@@ -105,6 +116,22 @@ class regWindow(QMainWindow):
         self._timer.setInterval(1000)
         self._timer.start()
 
+
+    def padeWriteVoltage(self):
+        #Test write 1 V
+        v = int(self.adcVoltage(10.0))
+        self.f.writeRegister('BIAS_BUS_DAC0', v)
+        
+    def padeReadVoltage(self):
+        self.f.readRegister('BIAS_BUS_DAC0', lambda: sys.stdout.write(str(self.parseVoltage(self.registers['BIAS_BUS_DAC0'].Status))+'\n'))
+        
+    def parseVoltage(self, v):
+        return (v*5.38)/256
+
+    def adcVoltage(self, v):
+        return round(v*256/5.38)
+
+    
     def selectionchange(self, index):
         print 'Chose: {0}'.format(self.pullDown.currentText())
         if self.f and self.f.verified:

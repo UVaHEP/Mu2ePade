@@ -85,7 +85,7 @@ def regCmd(reg, value = None, fpga = 0):
                 upperWrite = writeBase.format(hexFormatter(int(reg.UpperAddress)+fpgaOffset), hexFormatter(value & 0xFFFF0000))
                 # & 0x0000FFFF grab lower 16-bit, could just use
                 # 0xFFFF, but wanted it be clear 
-            lowerWrite = writeBase.format(hexFormatter(reg.Address+fpgaOffset), hexFormatter(value & 0x0000FFFF))
+            lowerWrite = writeBase.format(hexFormatter(int(reg.Address)+fpgaOffset), hexFormatter(value & 0x0000FFFF))
             if upperWrite:
                 return [lowerWrite, upperWrite]
             else:
