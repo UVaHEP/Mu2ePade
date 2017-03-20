@@ -43,6 +43,7 @@ class padeClient(LineReceiver):
         print 'Line Received: {0}'.format(line)
 
     def lineReceived(self, line):
+        print 'Line Received: {0}'.format(line)
         self.handle_msg(line)
 
     def rawDataReceived(self, packet):
@@ -132,9 +133,11 @@ class padeFactory(protocol.ClientFactory):
             
     def readRegisterBase(self, name, upper, line ):
         if upper:
-            self.registers[name].Status = 0
-            self.registers[name].Status = (int(line, 16)<<16)
+            print 'upper: {0}'.format(line)
+            self.registers[name].Status |= (int(line, 16)<<16)
         else:
+            self.registers[name].Status = 0
+            print 'lower: {0}'.format(line)
             if self.registers[name].Width == 32:
                 self.registers[name].Status += int(line, 16)
             else:

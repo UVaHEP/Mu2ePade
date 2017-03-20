@@ -27,7 +27,7 @@ class regWindow(QMainWindow):
         self.disconnect(self.button, QtCore.SIGNAL('clicked()'), self.padeConnect)
         
         self.f.verifyCb = self.connected
-        c = reactor.connectTCP('', 5001, self.f)
+        c = reactor.connectTCP('128.143.196.217', 5001, self.f)
 
     def padeDisconnect(self):
         self.f.client.transport.loseConnection()
@@ -66,16 +66,16 @@ class regWindow(QMainWindow):
         self.connect(self.button, QtCore.SIGNAL('clicked()'), self.padeDisconnect)
 
     def create_main_frame(self):        
-        page = QWidget()        
+        self.page = QWidget()        
 
-        self.button = QPushButton('Connect', page)
-        self.dataBtn = QPushButton('Read Data', page)
-        self.registersBtn = QPushButton('Read All Registers', page)
+        self.button = QPushButton('Connect', self.page)
+        self.dataBtn = QPushButton('Read Data', self.page)
+        self.registersBtn = QPushButton('Read All Registers', self.page)
         self.pullDown = QComboBox()
         self.rLabel = QLabel()
         self.pg = pyqtgraph.PlotWidget()        
-        self.vbutton = QPushButton('Read Voltage', page)
-        self.wbutton = QPushButton('Write Voltage',page)
+        self.vbutton = QPushButton('Read Voltage', self.page)
+        self.wbutton = QPushButton('Write Voltage',self.page)
         
         vbox1 = QVBoxLayout()
         vbox1.addWidget(self.button)
@@ -105,8 +105,8 @@ class regWindow(QMainWindow):
                      QtCore.SIGNAL('clicked()'),
                      self.padeWriteVoltage)
         
-        page.setLayout(vbox1)
-        self.setCentralWidget(page)
+        self.page.setLayout(vbox1)
+        self.setCentralWidget(self.page)
 
 
         self._timer = QtCore.QTimer()
