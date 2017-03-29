@@ -96,6 +96,32 @@ def regCmd(reg, value = None, fpga = 0):
         return (None, None)
 
 
+def parseA0(a):
+
+    try:
+        adc = float(a)
+        if (adc > 4.096):
+            adc = 8.192 - adc
+
+        return (adc/8)*250
+
+    except Exception as e:
+        print e
+
+    
+#    cmds = regCmd("HISTO_COUNT0", int('1'+hexFormatter(ch), 16))
+def readA0(ch, fpga=0):
+    if (fpga > 3):
+        print 'Error! Bad fpga value in read voltage, using first fpga'
+        fpga = 0
+
+
+    cmd = writeBase
+    fpgaConv = hexFormatter(fpga*4)
+    cmds = [cmd.format(fpgaConv+'20','1'+hexFormatter(ch)), 'gain 8\r\n', 'A0 2\r\n',
+            cmd.format(fpgaConv+'20', '00')]
+    return cmds
+
 
 
 ### Parser will get rearranged

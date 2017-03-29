@@ -11,6 +11,7 @@ import sys
 import functools
 from collections import deque
 
+import padeUi
 
 app = QApplication(sys.argv)
 import qtreactor.pyqt4reactor
@@ -27,6 +28,9 @@ class padeInterface(QMainWindow):
 
         #Setup interface
         self.ui = uic.loadUi('interface.ui')
+        self.channels = padeUi.channels(self)
+        self.chLst =  self.channels.activeChannels()
+
         self.connect(self.ui.connectBtn,
                      QtCore.SIGNAL('clicked()'),
                      self.netConnect)
@@ -35,6 +39,14 @@ class padeInterface(QMainWindow):
                      QtCore.SIGNAL('clicked()'),
                      self.readAllRegisters)
 
+        self.connect(self.ui.channelBtn,
+                     QtCore.SIGNAL('clicked()'),
+                     self.showChBox)
+
+        self.connect(self.ui.chSpinBox,
+                     QtCore.SIGNAL('valueChanged(int)'),
+                     self.readCh)
+        
         self.regFile = 'superpaderegs.xml'
         
         self.registers = padeCommon.readRegisters(self.regFile)
@@ -55,6 +67,10 @@ class padeInterface(QMainWindow):
         
         self.ui.show()
 
+
+    def showChBox(self):
+        self.channels.ui.show()
+        
     def connected(self):
         self.ui.connectBtn.setText("Disconnect")
         self.ui.statlbl.setText('Connected')
@@ -104,9 +120,16 @@ class padeInterface(QMainWindow):
         l.callback(int(self.ui.fpgaBox.value()))
 
 
-            
+    def readCh(self, ch):
+        print 'Reading Channel: {0}'.format(ch)
+#        print 'Delim: {0}'.format(repr(self.f.client.delimiter))
+        cb = functools.partial(self.readChUpdate, int(ch))
+        self.f.readA0(ch,cb, int(self.ui.fpgaBox.value()))
         
-            
+    def readChUpdate(self, ch, chVal):
+#        print 'Ch: {0}, ChVal Recvd: {1}'.format(ch, repr(chVal))
+#        print 'Ch: {0}, Parsed Value: {1}'.format(ch, padeCommon.parseA0(chVal))
+        print('Channel: {0}, Current: {1}'.format(ch, padeCommon.parseA0(chVal)))
         
 
 

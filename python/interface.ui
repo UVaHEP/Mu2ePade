@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>810</width>
-    <height>469</height>
+    <width>916</width>
+    <height>727</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,11 +17,14 @@
    <widget class="QSpinBox" name="fpgaBox">
     <property name="geometry">
      <rect>
-      <x>660</x>
-      <y>346</y>
+      <x>130</x>
+      <y>106</y>
       <width>86</width>
       <height>29</height>
      </rect>
+    </property>
+    <property name="maximum">
+     <number>3</number>
     </property>
    </widget>
    <widget class="QWidget" name="formLayoutWidget">
@@ -117,8 +120,8 @@
    <widget class="QLabel" name="label">
     <property name="geometry">
      <rect>
-      <x>590</x>
-      <y>350</y>
+      <x>60</x>
+      <y>110</y>
       <width>59</width>
       <height>21</height>
      </rect>
@@ -127,13 +130,119 @@
      <string>FPGA</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="IVBtn">
+    <property name="geometry">
+     <rect>
+      <x>60</x>
+      <y>140</y>
+      <width>251</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Take I-V Curves</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="channelBtn">
+    <property name="geometry">
+     <rect>
+      <x>60</x>
+      <y>190</y>
+      <width>251</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Channels</string>
+    </property>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>290</y>
+      <width>385</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QLabel" name="ChLabel">
+       <property name="text">
+        <string>Channel</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSpinBox" name="chSpinBox">
+       <property name="maximum">
+        <number>15</number>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="verticalSpacer">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>40</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="VLabel">
+       <property name="text">
+        <string>Voltage</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="CVLbl">
+       <property name="text">
+        <string>0.0 V</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="verticalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>40</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="ILabel">
+       <property name="text">
+        <string>Current</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="CILbl">
+       <property name="text">
+        <string>0.0 A</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>810</width>
+     <width>916</width>
      <height>27</height>
     </rect>
    </property>

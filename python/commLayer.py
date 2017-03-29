@@ -40,10 +40,11 @@ class padeClient(LineReceiver):
 
 
     def generic_receive(self, line):
-        print 'Line Received: {0}'.format(line)
+        if len(line.strip()) > 0: 
+            print 'Line Received: {0}'.format(line)
 
     def lineReceived(self, line):
-        print 'Line Received: {0}'.format(line)
+        #print 'Line Received: {0}'.format(line)
         self.handle_msg(line)
 
     def rawDataReceived(self, packet):
@@ -102,7 +103,14 @@ class padeFactory(protocol.ClientFactory):
             self.client.handle_msg = self.client.generic_receive
             self.readcb()
         
+    def handle_A0(self,line):
+        if line.find('avg') != -1:
+            adcVal = line.strip().split(' ')[0]
+            self.client.delimiter = '\r\n' ## Pade Server has these flipped for A0
+            self.client.handle_msg = self.client.generic_receive
+            self.readcb(adcVal)
 
+            
     def printRegisterStatus(self):
         print 'Registers\n---------'
         for name in self.registers:
@@ -112,6 +120,17 @@ class padeFactory(protocol.ClientFactory):
                 print '{0}:{1}'.format(name, self.registers[name].Status)
 
 
+    def readA0(self,ch,cb,fpga=0):
+        # Read current
+        cmds = padeCommon.readA0(ch, fpga)
+        self.client.handle_msg = self.handle_A0
+        self.client.delimiter = '\n\r' ## Pade Server has these flipped
+        print cmds
+        self.readcb = cb
+        for cmd in cmds:
+            self.client.sendLine(cmd)
+        
+                
     def readRegister(self, name, cb, fpga=0):
         # I don't like this idiom, I'll have to see if I can come up with
         # a clearer way of expressing it
