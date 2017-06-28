@@ -3,7 +3,7 @@ import numpy as np
 import PyQt4
 from PyQt4 import QtCore, uic, QtGui
 from PyQt4.QtGui import *
-
+from PyQt4.QtCore import QTimer
 import padeCommon
 from padeCommon import encode, event
 
@@ -121,17 +121,37 @@ class padeInterface(QMainWindow):
 
 
     def readCh(self, ch):
+        #Lock the widget until we get a response
+        self.ui.chSpinBox.enabled = False
+
+        #Time out incase we don't get a response 
+        self.chTimer = QTimer()
+        self.chTimer.setSingleShot(True)
+        self.chTimer.setInterval(1000)
+        self.connect(self.chTimer,
+                     QtCore.SIGNAL('timeout()'),
+                     functools.partial(self.timeout, 'chSpinBox'))
+        self.chTimer.start()
         print 'Reading Channel: {0}'.format(ch)
 #        print 'Delim: {0}'.format(repr(self.f.client.delimiter))
         cb = functools.partial(self.readChUpdate, int(ch))
         self.f.readA0(ch,cb, int(self.ui.fpgaBox.value()))
         
     def readChUpdate(self, ch, chVal):
-#        print 'Ch: {0}, ChVal Recvd: {1}'.format(ch, repr(chVal))
-#        print 'Ch: {0}, Parsed Value: {1}'.format(ch, padeCommon.parseA0(chVal))
-        print('Channel: {0}, Current: {1}'.format(ch, padeCommon.parseA0(chVal)))
+        self.ui.chSpinBox.enabled = True
+        self.chTimer.stop()
+        self.chTimer = None
         
 
+        print('Channel: {0}, Current: {1}'.format(ch, padeCommon.parseA0(chVal)))
+        
+        
+    def timeout(self, kind):
+        if kind == 'chSpinBox':
+            print 'Timed out reading channel voltage and current'
+            self.ui.chSpinBox.enabled = True
+            
+        
 
 window = padeInterface()
 
